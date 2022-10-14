@@ -13,7 +13,7 @@ import os
 
 
 
-path = '/Users/Mitchell/IRI/IRIFall2022/Export/export_files/CHIRPS_EthiopiaAOI/'
+path = 'Export/export_files/CHIRPS_EthiopiaAOI/'
 
 image_folder = 'CHIRPS_Pentad_final/'
 
@@ -92,17 +92,18 @@ def aggregate_yearly(data_dict):
     for i, y in enumerate(years):
         sel = (ymp[:,0] == y) & np.isin (ymp[:,1] , months)
         year_arr = arr[sel,:,:]
-        y_sum = np.sum(year_arr, axis = 0)
+        y_sum = np.nansum(year_arr, axis = 0)
         yearly_sums[i, :,:] = y_sum
+    return yearly_sums
         
-    print('Mean map')
-    plt.imshow(np.nanmean(yearly_sums, axis = 0), 
-               cmap= 'Blues', interpolation='None')
-    plt.show()
-    print('Std map')
-    plt.imshow(np.nanstd(yearly_sums, axis = 0), 
-               cmap= 'bwr', interpolation='None')
-    plt.show()
+    # print('Mean map')
+    # plt.imshow(np.nanmean(yearly_sums, axis = 0), 
+    #            cmap= 'Blues', interpolation='None')
+    # plt.show()
+    # print('Std map')
+    # plt.imshow(np.nanstd(yearly_sums, axis = 0), 
+    #            cmap= 'bwr', interpolation='None')
+    # plt.show()
     
     
         
