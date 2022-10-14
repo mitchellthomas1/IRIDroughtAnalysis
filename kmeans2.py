@@ -99,12 +99,32 @@ plt.show()
 
 ## see what each cluster describes over time
 
-f1, axs = plt.subplots(5,1,figsize(9,14))
+f1, axs = plt.subplots(5,1,figsize = (9,11), sharex = True)
 for i, ax in enumerate(axs):
+    x = np.arange(1981, 2022)
     ts = kmeans.cluster_centers_[i]
+    ax.plot(x,ts, label = 'Cluster ' + str(i+1), color = colors[i], lw = 4)
+    ax.set_ylabel('$z_{cluster}$')
+f1.legend(loc = 5)
+axs[0].set_title('Cluster centers over time , k = 5')
+axs[-1].set_xlabel('Year')
+plt.show()
 
 
 
+mean_cluster_center = np.mean(kmeans.cluster_centers_, axis = 0)
+std_cluster_center = np.std(kmeans.cluster_centers_, axis = 0)
+
+f2, axs = plt.subplots(5,1,figsize = (9,11), sharex = True)
+for i, ax in enumerate(axs):
+    x = np.arange(1981, 2022)
+    ts = (kmeans.cluster_centers_[i] - mean_cluster_center ) 
+    ax.plot(x,ts, label = 'Cluster ' + str(i+1), color = colors[i], lw = 4)
+    ax.set_ylabel('$z_{cluster} - z_{mean}$')
+f2.legend(loc = 5)
+axs[0].set_title('(Cluster centers) - (mean cluster center) over time, k = 5')
+axs[-1].set_xlabel('Year')
+plt.show()
 
 
 
