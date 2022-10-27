@@ -13,20 +13,48 @@ import os
 
 
 
+
 path = 'Export/export_files/CHIRPS_EthiopiaAOI/'
 
-image_folder = 'CHIRPS_Pentad_final/'
 
 
 
 
+def return_data(mode = None, spi_window = 0):
+    '''
+    
 
-def return_data():
+    Parameters
+    ----------
+    mode : str, optional
+        set as 'spi' if using standardized precipitation index. The default is None.
+    spi_window : int, optional
+        Window for spi computation if mode == 'spi'. The default is None.
+
+    Returns
+    -------
+    dict
+        DESCRIPTION.
+
+    '''
+    if mode == 'spi':
+        image_folder = 'CHIRPS_SPI_{}pentads/'.format(spi_window)
+        print('returning data with Standardized Precipitation Index as TRUE')
+    else:
+    
+        image_folder = 'CHIRPS_Pentad_final/'
+
+        
+    
     lon = np.genfromtxt( path + "AOI_longitude.csv", delimiter=',')
     lat = np.genfromtxt( path + "AOI_latitude.csv", delimiter=',')
     
     files_raw = np.array(os.listdir(path + image_folder))
-    files = np.sort( np.delete( files_raw, np.where(files_raw == '.DS_Store')[0][0] ))
+    if '.DS_Store' in files_raw:    
+        files = np.delete( files_raw, np.where(files_raw == '.DS_Store')[0][0] )
+    else:
+        files = files_raw
+    files = np.sort(files)
     ymp = [ (f.split('_')[1][1:5],  f.split('_')[1].split('m')[1].split('p')[0] ,
                 f.split('_')[1].split('m')[1].split('p')[1])  for f in files]
     image_arr = np.array([ np.genfromtxt( path + image_folder + f, delimiter=',') for f in files])
@@ -46,7 +74,11 @@ def log10_zerosnan(m):
     o[:] = np.nan
     return np.log10(m, out=o, where=(m!=0))
 
-def normalize_array(data_array, transform = None):
+def divide_by_max(m):
+    max_val = np.nanmax(m)
+    return m / max_val
+
+def normalize_array(data_array, transform = None, axis = 0):
     '''
     Parameters
     ----------
@@ -57,6 +89,11 @@ def normalize_array(data_array, transform = None):
     transform: function(ndarray), (optional) :
         optional transformation function to apply across the data before transofrmation
         i.e. np.log10()
+        
+    axis: int or None, (optional) - default 0:
+        aggregate mean and standard deviation over this axis
+        select 0 to do a pixel-wise normalization
+        select None to do a dataset-wide normalization
         
 
     Returns
@@ -69,8 +106,8 @@ def normalize_array(data_array, transform = None):
         transformed_arr = transform(data_array)
     else:
         transformed_arr = data_array
-    mean = np.nanmean(transformed_arr, axis = 0)
-    std = np.nanstd(transformed_arr, axis = 0)
+    mean = np.nanmean(transformed_arr, axis = axis)
+    std = np.nanstd(transformed_arr, axis = axis)
     data_norm = (transformed_arr - mean ) / std
     if data_norm.shape != data_array.shape:
         raise (ValueError)
