@@ -43,7 +43,7 @@ def make_date_array(start,end):
         
     
 
-def spatially_average(cluster_labels, data_dict, time_periods):
+def calculate_index(cluster_labels, data_dict, time_periods, yr_range):
     '''
     Calculates spatially averaged rainfall by spatial clusters 
     and time periods. Calculates over a m x n size study area.
@@ -57,53 +57,69 @@ def spatially_average(cluster_labels, data_dict, time_periods):
     time_periods : dict
         Dictionary which maps time period name (str) 
             to a start, end tuple (mm_dd , mm_dd)
+    yr_range: tuple of ints
+        start and end dates (inclusive) for computation
 
     Returns
     -------
-    average_dict : TYPE
-        DESCRIPTION.
+    index_dict : doctionary
+        dictionary which maps cluster name to season name to the 20th percentile and 
+        trigger years
 
     '''
     
     clusters = np.unique(cluster_labels)
     date_li = ['{}_{}'.format( file.split('_')[0][4:6], file.split('_')[0][6:8]) for file in data_dict['filenames']]
     
-    average_dict = {} 
+    index_dict = {} 
     
         
-    for tp_key in time_periods.keys():
-        average_dict[tp_key] = {}
-        start, end = time_periods[tp_key]
-        possible_dates = make_date_array(start,end)
-        global temporal_bool
-        temporal_bool = np.isin(date_li, possible_dates)
+    for x in clusters:
+        index_dict['Cluster_{}'.format(x)] = {}
+        spatial_bool = cluster_labels == x
+        cluster_data = data_dict['imagearray'][:, spatial_bool]
+        print('cluster data shape', cluster_data.shape)
         
-        for x in clusters:
+        for tp_key in time_periods.keys():
+            index_dict['Cluster_{}'.format(x)][tp_key] = {}
             
-            global spatial_bool
-            spatial_bool = cluster_labels == x
+            start, end = time_periods[tp_key]
+
+            possible_toy = make_date_array(start,end)
+            time_of_yr_bool = np.isin(date_li, possible_toy)
+                
+            yrs = np.array(list(range(yr_range[0], yr_range[1]+1)))
+            yr_sum = np.zeros(yrs.shape)
+            for i, yr in enumerate(yrs):
+                image_yr_bool = np.array([int(f[0:4]) for f in data_dict['filenames']]) == yr
+                assert len(image_yr_bool) == len(time_of_yr_bool)
+                final_time_index = image_yr_bool & time_of_yr_bool
+                year_toy_arr = cluster_data[final_time_index]
+                year_toy_sum = np.nansum(year_toy_arr)
+                yr_sum[i] = year_toy_sum
+                
             
-            cluster_temporal_arr = data_dict['imagearray'][temporal_bool][:,spatial_bool]
+            #20th percentile
             
-            total_sum = np.nansum(cluster_temporal_arr)
-            n_years = 41
-            yearly_avg = total_sum / n_years
+            perc_20 = np.percentile(yr_sum, 20)
+            below_20 = yrs[np.array(yr_sum) < perc_20]
+            print('TP key: ', tp_key, ' Cluster: ', x, ' perc 20: ', perc_20, ' years: ', below_20)
             
-            average_dict[tp_key][x] = yearly_avg
-            
-            
-            
-    
-    
-    return average_dict
+            index_dict['Cluster_{}'.format(x)][tp_key]['Perc20(mm)']= perc_20
+            index_dict['Cluster_{}'.format(x)][tp_key]['TriggerYears']= below_20
+                
+
+    return index_dict
 
 
 
 time_periods = {'Kiremt': ('06_01','08_31'),
                 'Belg': ('03_01','05_15')}
-data_dict = return_data(start_yr=1981, end_yr = 2021)
+yr_range = (1981, 2021)
+data_dict = return_data(start_yr=yr_range[0], end_yr = yr_range[1])
 cluster_labels = np.ones_like(data_dict['imagearray'][0])
-average_dict = spatially_average(cluster_labels, data_dict, time_periods)
+ 
+average_dict = calculate_index(cluster_labels, data_dict, time_periods, yr_range)
 
 
 
