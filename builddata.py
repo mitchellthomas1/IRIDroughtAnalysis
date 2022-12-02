@@ -20,7 +20,7 @@ path = 'Export/export_files/CHIRPS_EthiopiaAOI/'
 
 
 
-def return_data(mode = None, spi_window = 0):
+def return_data(mode = None, spi_window = 0, start_yr =1981, end_yr=2022):
     '''
     
 
@@ -55,6 +55,9 @@ def return_data(mode = None, spi_window = 0):
     else:
         files = files_raw
     files = np.sort(files)
+    years = list(range(start_yr, end_yr+1))
+    files = [x for x in files if int(x[0:4]) in years]
+    
     ymp = [ (f.split('_')[1][1:5],  f.split('_')[1].split('m')[1].split('p')[0] ,
                 f.split('_')[1].split('m')[1].split('p')[1])  for f in files]
     image_arr = np.array([ np.genfromtxt( path + image_folder + f, delimiter=',') for f in files])

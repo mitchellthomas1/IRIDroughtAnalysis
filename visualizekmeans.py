@@ -8,7 +8,7 @@ Created on Fri Oct 21 17:54:44 2022
 
 
 from builddata import return_data, average_monthly, filter_by_month
-from kmeans2 import run_kmeans, run_gmm, prepare_data
+from kmeans import run_kmeans, run_gmm, prepare_data
 import numpy as np
 import pandas as pd
 import datetime as dt
@@ -59,7 +59,7 @@ data_dict = filter_by_month(data_dict, select_months)
 X, shape_tuple = prepare_data(data_dict,method)
 w,h,d = shape_tuple
 kmeans = run_kmeans(X,k)
-gmm = run_gmm(X, k) 
+# gmm = run_gmm(X, k) 
 
 # colormap
 cmap = ListedColormap(['tab:red','tab:blue','tab:green','tab:orange'])
@@ -70,8 +70,8 @@ def plot_map(cmap = cmap):
         y_min, y_max = data_dict['latitude'].min(), data_dict['latitude'].max()
         extent = [x_min , x_max, y_min , y_max]
         return extent
-    # labels = kmeans.labels_
-    labels = gmm.predict(X)
+    labels = kmeans.labels_
+    # labels = gmm.predict(X)
     im = plt.imshow(labels.reshape(w,h) ,
                 cmap= cmap, 
                 interpolation='None', extent = get_extent(data_dict))
@@ -93,7 +93,8 @@ def yearly_cluster_bar_chart():
     #group by cluster
     cluster_centers = kmeans.cluster_centers_
     years = np.arange(1981,2022)
-    datetimes =  [dt.datetime(x[0], x[1], x[2] ) for x in data_dict['ymp'].astype(int)]
+    date_str_li = [x.split('_')[0] for x in  data_dict['filenames']]
+    datetimes =  [dt.datetime( int(x[0:4]) , int(x[4:6]), int(x[6:8]) ) for x in date_str_li]
     date_index = pd.DatetimeIndex(datetimes)
     cluster_df = pd.DataFrame(data = np.transpose(cluster_centers), index=date_index, columns = ['Cluster{}'.format(x) for x in range(1,k+1)])
     
@@ -108,7 +109,38 @@ def yearly_cluster_bar_chart():
     ax.set_ylabel('spi')
     ax.set_title('Mean spi of cluster center over each year')
     plt.show()
+yearly_cluster_bar_chart()
     
+def pentadal_cluster_bar_chart():
+    #group by cluster
+    cluster_centers = kmeans.cluster_centers_
+   
+    date_str_li = [x.split('_')[0] for x in  data_dict['filenames']]
+    datetimes =  [dt.datetime( int(x[0:4]) , int(x[4:6]), int(x[6:8]) ) for x in date_str_li]
+    date_index = pd.DatetimeIndex(datetimes)
+    
+    cluster_df = pd.DataFrame(data = np.transpose(cluster_centers), index=date_index, columns = ['Cluster{}'.format(x) for x in range(1,k+1)])
+    
+    
+    mmdd_li = [x.split('_')[0][4:8] for x in  data_dict['filenames']]
+    cluster_df['mmdd'] = mmdd_li
+
+    pentadal_mean = cluster_df.groupby('mmdd').mean()
+    # print(pentadal_mean)
+    
+    
+    fig,ax = plt.subplots(1,1,figsize = (14,4))
+    pentadal_mean.plot.bar(ax =ax , alpha = 1, cmap = cmap)
+    labels = ['{}/{}'.format(int(x[0:2]), int(x[2:4])) for x in pentadal_mean.index]
+    ax.set_xticklabels(labels)
+    # ax.set_ylim([-1,-0.4])
+    
+    ax.set_xlabel('month / day')
+    ax.set_ylabel('spi')
+    ax.set_title('Mean spi of cluster center over each pentad')
+    plt.show()
+    
+pentadal_cluster_bar_chart()
 
 
 #old cluster ts code

@@ -7,7 +7,7 @@ Created on Fri Oct 21 17:54:44 2022
 """
 
 from builddata import return_data, average_monthly, filter_by_month
-from kmeans2 import run_kmeans, run_gmm, prepare_data, MSE, intercluster_var
+from kmeans import run_kmeans, run_gmm, prepare_data, MSE, intercluster_var
 import numpy as np
 import matplotlib.pyplot as plt
 import sklearn.metrics as metrics 
